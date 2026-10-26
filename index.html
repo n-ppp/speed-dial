@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <!-- ページの文字コードと表示設定 -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SNSなどでシェアされたときに使われるタイトルと画像 -->
+    <meta property="og:title" content="PPP" />
+    <meta property="og:image" content="https://ss1.xrea.com/n15.s205.xrea.com/image630.png" />
+
+    <!-- タブに表示されるタイトル -->
+    <title>PPP</title>
+
+    <!-- ファビコンを指定 -->
+    <link rel="icon" type="image/png" href="image16.png">
+
+    <!-- デザイン（CSS） -->
+    <style>
+        /* ページ全体の基本スタイル（背景・文字など） */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #121212; /* 黒っぽい背景でダークテーマにしてるよ */
+            color: #e0e0e0;             /* 文字はグレーっぽくて目に優しいよ */
+        }
+
+        /* ボタン全体を並べるためのグリッド */
+        #speed-dial-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* ボタンの最小幅は100pxで、画面に合わせて自動で並べるよ */
+            gap: 10px;          /* ボタン同士の間隔 */
+            padding: 20px;      /* 全体の余白 */
+        }
+
+        /* 各ボタン（リンク）の見た目 */
+        .shortcut {
+            display: flex;             /* ボタン内のテキストを中央に置くために使う */
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            background-color: #1e1e1e; /* ダークな背景 */
+            border: 2px solid #333;    /* 枠線もちょっと濃いグレー */
+            border-radius: 8px;        /* 角を少し丸めてるよ */
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.3s ease;
+            height: 40px;
+            text-decoration: none;    /* 下線は表示しない */
+            color: #e0e0e0;            /* 文字色 */
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* マウスを重ねたときのスタイル（ハイライト） */
+        .shortcut:hover {
+            background-color: #333;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ボタンたちを入れる入れ物（空の状態で用意しておく） -->
+    <div id="speed-dial-container"></div>
+
+    <script>
+        // --- 外部のテキストファイルからURLとタイトルを読み込んでボタンを作る関数 ---
+        async function loadURLs() {
+            try {
+                // urls.txt を読み込む（同じサーバーに設置しておく必要があるよ）
+                const response = await fetch('urls.txt');
+                const text = await response.text();
+
+                // UTF-8のファイルに入ってるBOM（変な先頭の文字）を削除する
+                // const cleanedText = text.replace(/^\uFEFF/, '');
+
+                // テキストを行ごとに分けて、前後の空白を取り除き、空の行は除くよ
+                const lines = text.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line !== '');
+
+                const container = document.getElementById('speed-dial-container');
+
+                // 2行ずつ（タイトルとURLのペア）で処理するループ
+                for (let i = 0; i < lines.length; i += 2) {
+                    const title = lines[i];       // 奇数行はタイトル
+                    const url = lines[i + 1];     // 偶数行はURL
+
+                    // <a>タグ（リンク）を作成
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.classList.add('shortcut');
+                    link.title = title;           // ホバー時に元のタイトルが出る
+                    link.textContent = title;     // ボタンに表示するテキスト
+                    link.rel = 'noreferrer';      // ← これでリンク先にリファラ（自分のURL）が送られないようにしてる
+
+                    container.appendChild(link);  // 作ったリンクをページに追加する
+                }
+
+                // 表示する文字数をボタンの幅に合わせて調整
+                adjustTitleLengths();
+
+                // ウィンドウをリサイズしたときも再調整するよ
+                window.addEventListener('resize', adjustTitleLengths);
+            } catch (error) {
+                // エラーがあったらコンソールに表示してくれる
+                console.error("URLの読み込みに失敗しました:", error);
+            }
+        }
+
+        // --- ボタンの幅に合わせて文字数を制限する関数 ---
+        function adjustTitleLengths() {
+            const links = document.querySelectorAll('.shortcut');
+
+            links.forEach(link => {
+                const buttonWidth = link.offsetWidth;
+                const maxLength = Math.floor(buttonWidth / 10); // おおよそ1文字10pxで計算
+
+                const title = link.title || link.textContent;
+
+                // 長すぎるタイトルは切り詰めて「...」を付ける
+                if (title.length > maxLength) {
+                    link.textContent = title.slice(0, maxLength) + '...';
+                } else {
+                    link.textContent = title;
+                }
+            });
+        }
+
+        // ページが読み込まれたときにURL読み込みを実行するよ
+        window.onload = loadURLs;
+    </script>
+</body>
+</html>
